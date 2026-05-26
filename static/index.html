@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My PDF AI · Motor Vetorial Pixel-Perfect</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular'],
+          },
+          colors: {
+            ink: { 950: '#050507', 900: '#0D0F14', 800: '#1A1D25' },
+            cyan: { brand: '#00E5C7' },
+            blue: { brand: '#3B82F6' },
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body { background: #050507; color: #E5E7EB; font-family: 'Inter', system-ui; }
+    .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: #00E5C7; text-transform: uppercase; }
+    .grad-text { background: linear-gradient(135deg, #3B82F6, #00E5C7); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .grad-btn { background: linear-gradient(135deg, #3B82F6, #00E5C7); transition: opacity .15s; }
+    .grad-btn:hover { opacity: .9; }
+    .grad-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .card { background: #0D0F14; border: 1px solid #1A1D25; border-radius: 12px; }
+    .ghost-btn { background: transparent; border: 1px solid #1A1D25; color: #E5E7EB; transition: border-color .15s; }
+    .ghost-btn:hover { border-color: #3B82F6; }
+    .dropzone { border: 1.5px dashed #1A1D25; transition: all .15s; }
+    .dropzone:hover, .dropzone.dragover { border-color: #00E5C7; background: rgba(0,229,199,0.03); }
+    .checkbox-row { transition: background .12s; }
+    .checkbox-row:hover { background: rgba(255,255,255,.02); }
+    .input { background: #050507; border: 1px solid #1A1D25; color: #E5E7EB; border-radius: 8px; padding: 8px 12px; font-family: 'JetBrains Mono', monospace; font-size: 13px; transition: border-color .15s; }
+    .input:focus { outline: none; border-color: #3B82F6; }
+    .pill { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .05em; padding: 3px 8px; border-radius: 999px; }
+    .pill-ok    { background: rgba(16,185,129,.1); color: #34D399; border: 1px solid rgba(16,185,129,.3); }
+    .pill-warn  { background: rgba(245,158,11,.1); color: #FBBF24; border: 1px solid rgba(245,158,11,.3); }
+    .pill-err   { background: rgba(239,68,68,.1); color: #F87171; border: 1px solid rgba(239,68,68,.3); }
+    .dot-live { width: 8px; height: 8px; border-radius: 50%; background: #00E5C7; animation: pulse 1.6s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+    .spinner { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg) } }
+    /* Scrollbar dark */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #0D0F14; }
+    ::-webkit-scrollbar-thumb { background: #1A1D25; border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2A2D35; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+<!-- TOP BAR -->
+<header class="border-b border-ink-800 sticky top-0 z-30 bg-ink-950/90 backdrop-blur">
+  <div class="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg grad-btn flex items-center justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+      </div>
+      <div>
+        <div class="text-base font-semibold tracking-tight">My PDF AI</div>
+        <div class="eyebrow" style="font-size: 9px; letter-spacing: .15em">Motor vetorial · pixel-perfect</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="dot-live"></span>
+      <span class="eyebrow">PyMuPDF online</span>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-6 py-10">
+
+  <!-- HERO -->
+  <section class="mb-10 text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-ink-800 mb-5">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00E5C7" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span class="eyebrow">Edição vetorial · zero raster · zero retângulo branco</span>
+    </div>
+    <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-3">
+      Edite boletos no nível <span class="grad-text">do vetor</span>.
+    </h1>
+    <p class="text-gray-400 max-w-xl mx-auto">
+      Substitua valor, vencimento, linha digitável e código de barras preservando fundo,
+      watermarks e estrutura do PDF original — indistinguível do documento real.
+    </p>
+  </section>
+
+  <!-- STEPPER -->
+  <ol class="grid md:grid-cols-4 gap-3 mb-10">
+    <li class="card p-4">
+      <div class="eyebrow mb-1">Passo 01</div>
+      <div class="font-semibold">Upload do Template</div>
+      <div class="text-xs text-gray-500 mt-1">PDF 1 · documento base</div>
+    </li>
+    <li class="card p-4">
+      <div class="eyebrow mb-1">Passo 02</div>
+      <div class="font-semibold">Upload da Origem</div>
+      <div class="text-xs text-gray-500 mt-1">PDF 2 · dados novos</div>
+    </li>
+    <li class="card p-4">
+      <div class="eyebrow mb-1">Passo 03</div>
+      <div class="font-semibold">Revise & Selecione</div>
+      <div class="text-xs text-gray-500 mt-1">Marque os campos a substituir</div>
+    </li>
+    <li class="card p-4">
+      <div class="eyebrow mb-1">Passo 04</div>
+      <div class="font-semibold">Gere o PDF</div>
+      <div class="text-xs text-gray-500 mt-1">Download pixel-perfect</div>
+    </li>
+  </ol>
+
+  <!-- GRID PRINCIPAL -->
+  <section class="grid md:grid-cols-2 gap-5 mb-8">
+
+    <!-- TEMPLATE -->
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="eyebrow">Boleto 1</div>
+          <div class="font-semibold">Template / Base</div>
+        </div>
+        <span id="status-template" class="pill pill-warn">aguardando</span>
+      </div>
+      <label class="dropzone rounded-xl p-6 flex flex-col items-center cursor-pointer block" id="drop-template">
+        <input type="file" accept="application/pdf" class="hidden" id="file-template" />
+        <svg class="w-10 h-10 text-gray-500 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div class="text-sm font-medium" id="template-filename">Arraste o PDF aqui ou clique pra escolher</div>
+        <div class="text-xs text-gray-500 mt-1" id="template-filesize">Tamanho não importa · processamento server-side</div>
+      </label>
+      <div id="template-detections" class="mt-4 hidden">
+        <div class="eyebrow mb-2">Campos detectados</div>
+        <ul class="space-y-1 text-xs font-mono" id="template-detections-list"></ul>
+      </div>
+    </div>
+
+    <!-- SOURCE -->
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="eyebrow">Boleto 2</div>
+          <div class="font-semibold">Origem dos dados</div>
+        </div>
+        <span id="status-source" class="pill pill-warn">aguardando</span>
+      </div>
+      <label class="dropzone rounded-xl p-6 flex flex-col items-center cursor-pointer block" id="drop-source">
+        <input type="file" accept="application/pdf" class="hidden" id="file-source" />
+        <svg class="w-10 h-10 text-gray-500 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+        <div class="text-sm font-medium" id="source-filename">Arraste o PDF aqui ou clique pra escolher</div>
+        <div class="text-xs text-gray-500 mt-1" id="source-filesize">Vamos extrair: valor, vencimento, linha digitável, código de barras</div>
+      </label>
+    </div>
+  </section>
+
+  <!-- REVISÃO -->
+  <section id="review-section" class="card p-6 mb-8 hidden">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <div class="eyebrow">Passo 03</div>
+        <h2 class="text-xl font-semibold">Revisar e selecionar campos</h2>
+        <p class="text-sm text-gray-400 mt-1">Marque o que você quer substituir. Edite os valores se a extração automática precisar de ajuste.</p>
+      </div>
+    </div>
+
+    <div class="space-y-2" id="fields-form">
+      <!-- linhas geradas via JS -->
+    </div>
+
+    <div class="mt-6 flex items-center gap-3 pt-5 border-t border-ink-800">
+      <button id="btn-generate" class="grad-btn px-5 py-2.5 rounded-lg font-medium text-white flex items-center gap-2" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Gerar PDF pixel-perfect</span>
+      </button>
+      <button id="btn-reset" class="ghost-btn px-4 py-2.5 rounded-lg text-sm">Limpar</button>
+      <span id="generate-hint" class="text-xs text-gray-500 ml-auto"></span>
+    </div>
+  </section>
+
+  <!-- RESULTADO -->
+  <section id="result-section" class="card p-6 mb-8 hidden">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <div class="eyebrow">Resultado</div>
+        <h2 class="text-xl font-semibold">PDF gerado</h2>
+      </div>
+      <span class="pill pill-ok" id="result-status">processado</span>
+    </div>
+    <div id="result-summary" class="text-sm text-gray-400 mb-4"></div>
+    <div class="flex gap-3">
+      <a id="btn-download" class="grad-btn px-5 py-2.5 rounded-lg font-medium text-white inline-flex items-center gap-2" download="boleto_editado.pdf">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Baixar PDF
+      </a>
+      <a id="btn-preview" class="ghost-btn px-4 py-2.5 rounded-lg text-sm inline-flex items-center gap-2" target="_blank">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Abrir em nova aba
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="text-center text-xs text-gray-600 mt-16 pb-8">
+    My PDF AI · Motor vetorial PyMuPDF · v0.2
+  </footer>
+</main>
+
+<!-- TOAST -->
+<div id="toast" class="fixed bottom-6 right-6 hidden card px-4 py-3 max-w-sm shadow-2xl z-50">
+  <div class="flex items-start gap-3">
+    <div id="toast-icon" class="mt-0.5"></div>
+    <div>
+      <div id="toast-title" class="font-medium text-sm"></div>
+      <div id="toast-msg" class="text-xs text-gray-400 mt-0.5"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div id="loading" class="fixed inset-0 bg-ink-950/80 backdrop-blur-sm hidden items-center justify-center z-40">
+  <div class="card p-8 flex flex-col items-center gap-4">
+    <svg class="spinner w-10 h-10 text-cyan-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    <div class="text-center">
+      <div class="font-medium" id="loading-title">Processando…</div>
+      <div class="text-xs text-gray-500 mt-1" id="loading-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ───────────────────────── State ─────────────────────────
+const state = {
+  templateFile: null,
+  sourceFile: null,
+  detections: null,
+  extracted: null,
+  fields: {
+    valor:           { checked: false, value: '', label: 'Valor',           detected: false, extracted: '' },
+    vencimento:      { checked: false, value: '', label: 'Vencimento',      detected: false, extracted: '' },
+    linha_digitavel: { checked: false, value: '', label: 'Linha digitável', detected: false, extracted: '' },
+    codigo_barras:   { checked: false, value: '', label: 'Código de barras (44 dígitos)', detected: false, extracted: '' },
+  },
+  resultBlobUrl: null,
+};
+
+// ───────────────────────── Helpers UI ─────────────────────────
+const $ = (id) => document.getElementById(id);
+const toggleLoading = (show, title='Processando…', msg='') => {
+  const el = $('loading');
+  el.classList.toggle('hidden', !show);
+  el.classList.toggle('flex', show);
+  $('loading-title').textContent = title;
+  $('loading-msg').textContent = msg;
+};
+const toast = (title, msg='', kind='ok') => {
+  $('toast-title').textContent = title;
+  $('toast-msg').textContent = msg;
+  const icon = $('toast-icon');
+  icon.innerHTML = kind === 'err'
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00E5C7" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+  $('toast').classList.remove('hidden');
+  setTimeout(() => $('toast').classList.add('hidden'), 4000);
+};
+const fmtBytes = (b) => b < 1024 ? `${b} B` : b < 1048576 ? `${(b/1024).toFixed(1)} KB` : `${(b/1048576).toFixed(2)} MB`;
+
+// ───────────────────────── Dropzone setup ─────────────────────────
+function setupDropzone(dropId, inputId, onFile) {
+  const drop = $(dropId), input = $(inputId);
+  drop.addEventListener('click', () => input.click());
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('dragover'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault(); drop.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type === 'application/pdf') onFile(f);
+    else toast('Arquivo inválido', 'Só aceita PDF', 'err');
+  });
+  input.addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (f) onFile(f);
+  });
+}
+
+setupDropzone('drop-template', 'file-template', handleTemplateFile);
+setupDropzone('drop-source',   'file-source',   handleSourceFile);
+
+// ───────────────────────── Handlers ─────────────────────────
+async function handleTemplateFile(file) {
+  state.templateFile = file;
+  $('template-filename').textContent = file.name;
+  $('template-filesize').textContent = fmtBytes(file.size);
+  $('status-template').className = 'pill pill-warn'; $('status-template').textContent = 'analisando…';
+
+  toggleLoading(true, 'Detectando campos no template…', 'Análise vetorial via PyMuPDF');
+  try {
+    const fd = new FormData();
+    fd.append('template', file);
+    const r = await fetch('/detect', { method: 'POST', body: fd });
+    if (!r.ok) throw new Error(`Servidor retornou ${r.status}`);
+    const data = await r.json();
+    state.detections = data.detections;
+    renderDetections(data.detections);
+    $('status-template').className = 'pill pill-ok'; $('status-template').textContent = 'pronto';
+    toast('Template carregado', `${Object.keys(data.detections).length} campo(s) detectado(s)`);
+    // Marca como detectado nos fields
+    for (const key of Object.keys(state.fields)) {
+      state.fields[key].detected = !!data.detections[key];
+    }
+    renderFieldsForm();
+    maybeShowReview();
+  } catch (e) {
+    $('status-template').className = 'pill pill-err'; $('status-template').textContent = 'erro';
+    toast('Erro ao analisar template', e.message, 'err');
+  } finally {
+    toggleLoading(false);
+  }
+}
+
+async function handleSourceFile(file) {
+  state.sourceFile = file;
+  $('source-filename').textContent = file.name;
+  $('source-filesize').textContent = fmtBytes(file.size);
+  $('status-source').className = 'pill pill-warn'; $('status-source').textContent = 'extraindo…';
+
+  toggleLoading(true, 'Extraindo dados do PDF de origem…');
+  try {
+    const fd = new FormData();
+    fd.append('source', file);
+    const r = await fetch('/extract', { method: 'POST', body: fd });
+    if (!r.ok) throw new Error(`Servidor retornou ${r.status}`);
+    const data = await r.json();
+    state.extracted = data;
+    for (const key of Object.keys(state.fields)) {
+      const v = data[key] || '';
+      state.fields[key].extracted = v;
+      state.fields[key].value = v;
+      // marca por padrão se temos valor + foi detectado no template
+      state.fields[key].checked = !!v && state.fields[key].detected;
+    }
+    renderFieldsForm();
+    $('status-source').className = 'pill pill-ok'; $('status-source').textContent = 'pronto';
+    const found = Object.values(data).filter(v => v).length;
+    toast('Dados extraídos', `${found} campo(s) reconhecido(s) · revise abaixo`);
+    maybeShowReview();
+  } catch (e) {
+    $('status-source').className = 'pill pill-err'; $('status-source').textContent = 'erro';
+    toast('Erro ao extrair', e.message, 'err');
+  } finally {
+    toggleLoading(false);
+  }
+}
+
+function renderDetections(detections) {
+  const list = $('template-detections-list');
+  list.innerHTML = '';
+  for (const [key, info] of Object.entries(detections)) {
+    const li = document.createElement('li');
+    li.className = 'flex items-center justify-between py-1 px-2 rounded bg-ink-950/50';
+    li.innerHTML = `
+      <span class="text-gray-400">${key}</span>
+      <span class="text-cyan-brand text-[10px]">${info.count} ocorrência${info.count > 1 ? 's' : ''}</span>
+    `;
+    list.appendChild(li);
+  }
+  $('template-detections').classList.remove('hidden');
+}
+
+function renderFieldsForm() {
+  const form = $('fields-form');
+  form.innerHTML = '';
+  for (const [key, f] of Object.entries(state.fields)) {
+    const detected = f.detected;
+    const disabledClass = detected ? '' : 'opacity-40';
+    const row = document.createElement('div');
+    row.className = `checkbox-row flex items-center gap-3 p-3 rounded-lg ${disabledClass}`;
+    row.innerHTML = `
+      <input type="checkbox" id="cb-${key}" ${f.checked ? 'checked' : ''} ${!detected ? 'disabled' : ''}
+             class="w-4 h-4 accent-cyan-brand cursor-pointer" />
+      <label for="cb-${key}" class="font-medium text-sm w-44 cursor-pointer select-none">${f.label}</label>
+      <input type="text" id="val-${key}" value="${f.value || ''}" placeholder="${detected ? '(novo valor)' : '(não detectado no template)'}"
+             class="input flex-1" ${!detected ? 'disabled' : ''} />
+      ${detected ? '<span class="pill pill-ok">detectado</span>' : '<span class="pill pill-err">ausente</span>'}
+    `;
+    form.appendChild(row);
+    $(`cb-${key}`).addEventListener('change', (e) => {
+      state.fields[key].checked = e.target.checked;
+      updateGenerateButton();
+    });
+    $(`val-${key}`).addEventListener('input', (e) => {
+      state.fields[key].value = e.target.value;
+      updateGenerateButton();
+    });
+  }
+  updateGenerateButton();
+}
+
+function maybeShowReview() {
+  if (state.templateFile && state.sourceFile) {
+    $('review-section').classList.remove('hidden');
+    $('review-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function updateGenerateButton() {
+  const selected = Object.entries(state.fields).filter(([_, f]) => f.checked && f.value.trim());
+  const btn = $('btn-generate');
+  btn.disabled = selected.length === 0 || !state.templateFile;
+  $('generate-hint').textContent = selected.length
+    ? `${selected.length} campo${selected.length > 1 ? 's' : ''} selecionado${selected.length > 1 ? 's' : ''}`
+    : 'Marque pelo menos um campo';
+}
+
+// ───────────────────────── Generate ─────────────────────────
+$('btn-generate').addEventListener('click', async () => {
+  const fieldsToEdit = Object.entries(state.fields).filter(([_, f]) => f.checked && f.value.trim());
+  if (fieldsToEdit.length === 0) return;
+
+  toggleLoading(true, 'Editando vetorialmente…', `${fieldsToEdit.length} campo(s) · zero retângulo branco`);
+  try {
+    const fd = new FormData();
+    fd.append('template', state.templateFile);
+    fd.append('fields', fieldsToEdit.map(([k]) => k).join(','));
+    const data = {};
+    for (const [k, f] of fieldsToEdit) data[k] = f.value.trim();
+    fd.append('data_json', JSON.stringify(data));
+
+    const r = await fetch('/edit', { method: 'POST', body: fd });
+    if (!r.ok) {
+      const errText = await r.text();
+      throw new Error(`${r.status}: ${errText}`);
+    }
+    const blob = await r.blob();
+    if (state.resultBlobUrl) URL.revokeObjectURL(state.resultBlobUrl);
+    state.resultBlobUrl = URL.createObjectURL(blob);
+
+    const edited  = r.headers.get('X-Edited-Fields')  || '';
+    const skipped = r.headers.get('X-Skipped-Fields') || '';
+
+    $('btn-download').href = state.resultBlobUrl;
+    $('btn-download').download = (state.templateFile.name || 'boleto').replace(/\.pdf$/i, '') + '_editado.pdf';
+    $('btn-preview').href = state.resultBlobUrl;
+    $('result-summary').innerHTML = `
+      <div class="space-y-1">
+        <div><span class="text-cyan-brand">✓ Editados:</span> ${edited || '(nenhum)'}</div>
+        ${skipped ? `<div class="text-yellow-400">⚠ Skipped: ${skipped}</div>` : ''}
+        <div class="text-gray-500 text-xs mt-2">Tamanho: ${fmtBytes(blob.size)}</div>
+      </div>
+    `;
+    $('result-section').classList.remove('hidden');
+    $('result-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    toast('PDF gerado', 'Pixel-perfect · fundo intacto');
+  } catch (e) {
+    toast('Erro ao gerar PDF', e.message, 'err');
+  } finally {
+    toggleLoading(false);
+  }
+});
+
+// ───────────────────────── Reset ─────────────────────────
+$('btn-reset').addEventListener('click', () => {
+  if (state.resultBlobUrl) URL.revokeObjectURL(state.resultBlobUrl);
+  Object.assign(state, { templateFile: null, sourceFile: null, detections: null, extracted: null, resultBlobUrl: null });
+  for (const k of Object.keys(state.fields)) {
+    state.fields[k] = { ...state.fields[k], checked: false, value: '', detected: false, extracted: '' };
+  }
+  $('template-filename').textContent = 'Arraste o PDF aqui ou clique pra escolher';
+  $('template-filesize').textContent = 'Tamanho não importa · processamento server-side';
+  $('source-filename').textContent = 'Arraste o PDF aqui ou clique pra escolher';
+  $('source-filesize').textContent = 'Vamos extrair: valor, vencimento, linha digitável, código de barras';
+  $('status-template').className = 'pill pill-warn'; $('status-template').textContent = 'aguardando';
+  $('status-source').className   = 'pill pill-warn'; $('status-source').textContent   = 'aguardando';
+  $('template-detections').classList.add('hidden');
+  $('review-section').classList.add('hidden');
+  $('result-section').classList.add('hidden');
+  $('file-template').value = '';
+  $('file-source').value = '';
+  renderFieldsForm();
+  toast('Limpo', 'Pronto pra um novo ciclo');
+});
+
+// Render inicial
+renderFieldsForm();
+</script>
+
+</body>
+</html>
