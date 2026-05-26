@@ -1,29 +1,6 @@
 """
 editor.py · Motor de edição vetorial pixel-perfect
 ─────────────────────────────────────────────────────────────────────────────
-Aqui mora a diferença real do Caminho B para o JS browser.
-
-Estratégia em 4 passos por campo:
-  1. DETECTAR    → detector.py já achou o bbox vetorial do campo no template
-  2. AMOSTRAR    → leio a fonte e o size do texto original, pra replicar
-  3. APAGAR      → page.add_redact_annot(bbox) + page.apply_redactions()
-                    REMOVE OS OBJETOS-TEXTO da região, não pinta branco.
-                    O fundo (cores, gradientes, watermarks, linhas de
-                    tabela) permanece 100% intocado.
-  4. INJETAR     → page.insert_textbox(bbox, novo_texto, font=...)
-
-Para o código de barras:
-  - apaga via redação a região inteira do barcode antigo
-  - desenha N retângulos pretos vetoriais (barcode_gen.render_to_rects)
-  - o resultado fica vetorial nítido em qualquer zoom
-
-PROIBIÇÕES (regras da casa):
-  - NUNCA pintar retângulo branco sobre o conteúdo antigo
-  - NUNCA usar imagem raster pra mascarar texto
-  - NUNCA modificar pixels de fundo (cores, watermarks, linhas)
-
-PyMuPDF (fitz) faz isso de fábrica via redact_annot — a região é
-processada no nível do PDF stream, removendo objetos por interseção.
 """
 from __future__ import annotations
 import logging
@@ -39,21 +16,12 @@ from . import barcode_gen
 log = logging.getLogger(__name__)
 
 
-# ─────────────── Helpers ───────────────
 def _bbox_to_rect(bbox: BBox, pad: float = 0.5) -> fitz.Rect:
-    """Converte BBox interna em fitz.Rect com leve padding (cobre antialias residual)."""
     expanded = bbox.expanded(pad)
     return fitz.Rect(expanded.x0, expanded.y0, expanded.x1, expanded.y1)
 
 
 def _sample_font_at(page: fitz.Page, bbox: BBox) -> tuple[Optional[str], float, tuple[float, float, float]]:
-    """
-    Lê os atributos do texto que está no bbox (fonte, tamanho, cor).
-    Retorna defaults razoáveis se não conseguir extrair.
-
-    Default: fonte mono (helv-bold), 10pt, preto. Faz sentido pra boletos
-    porque valores monetários e datas costumam ser bold mono na Febraban.
-    """
     default_font, default_size, default_color = "helv", 10.0, (0.0, 0.0, 0.0)
     try:
         rect = _bbox_to_rect(bbox, pad=0.5)
@@ -63,8 +31,7 @@ def _sample_font_at(page: fitz.Page, bbox: BBox) -> tuple[Optional[str], float, 
                 for span in line.get("spans", []):
                     raw_size = span.get("size", default_size)
                     raw_font = span.get("font", default_font)
-                    raw_color = span.get("color", 0)  # int sRGB
-                    # Converte int sRGB → tuple 0-1
+                    raw_color = span.get("color", 0)
                     r = ((raw_color >> 16) & 0xFF) / 255.0
                     g = ((raw_color >> 8)  & 0xFF) / 255.0
                     b = ( raw_color        & 0xFF) / 255.0
@@ -75,45 +42,27 @@ def _sample_font_at(page: fitz.Page, bbox: BBox) -> tuple[Optional[str], float, 
 
 
 def _safe_font(font_name: Optional[str]) -> str:
-    """
-    PyMuPDF aceita 14 fontes base (helv, times, cour + variantes).
-    Se a fonte original do PDF for embedded, mapeamos pra equivalente base.
-    Isso evita erro "font not found" e mantém visual coerente.
-    """
     if not font_name:
         return "helv"
     fn = font_name.lower()
-    # Mono → cour (Courier)
     if any(x in fn for x in ("courier", "mono", "consolas", "menlo")):
         if "bold" in fn: return "cobo"
         if "italic" in fn or "oblique" in fn: return "coit"
         return "cour"
-    # Serif → times
     if any(x in fn for x in ("times", "serif", "roman", "georgia")):
         if "bold" in fn and ("italic" in fn or "oblique" in fn): return "tibi"
         if "bold" in fn: return "tibo"
         if "italic" in fn or "oblique" in fn: return "tiit"
         return "tiro"
-    # Default sans → helv (Helvetica)
     if "bold" in fn and ("italic" in fn or "oblique" in fn): return "hebi"
     if "bold" in fn: return "hebo"
     if "italic" in fn or "oblique" in fn: return "heit"
     return "helv"
 
 
-# ─────────────── Operações primitivas ───────────────
 def _erase_region(page: fitz.Page, bbox: BBox) -> None:
-    """
-    Remove TODOS os objetos (texto, desenhos) que intersectam o bbox.
-    Esta é a operação que faz o Python ser pixel-perfect: o fundo não é
-    pintado por cima — os objetos são *removidos* do stream do PDF.
-
-    Importante: fill=None garante que a redação NÃO pinte cor nenhuma.
-    O default de redact_annot é pintar branco, e isso a gente NÃO quer.
-    """
     rect = _bbox_to_rect(bbox, pad=0.5)
-    annot = page.add_redact_annot(rect, fill=None)  # fill=None → sem pintura
-    # Aplicação imediata da redação na página
+    annot = page.add_redact_annot(rect, fill=None)
     page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE)
 
 
@@ -126,28 +75,16 @@ def _write_text(
     color: tuple[float, float, float],
     align: int = fitz.TEXT_ALIGN_LEFT,
 ) -> bool:
-    """
-    Escreve `text` dentro do bbox usando insert_textbox (faz quebra de linha
-    e respeita limites). Se o texto não couber no size original, diminui em
-    incrementos de 0.5 até caber (não corta).
-    Retorna True se conseguiu escrever, False se não coube nem no menor size.
-    """
     rect = _bbox_to_rect(bbox, pad=0.0)
     size = float(font_size)
     safe_name = _safe_font(font_name)
     min_size = 5.0
 
     while size >= min_size:
-        # insert_textbox retorna número de chars que NÃO couberam (0 = ok)
         rc = page.insert_textbox(
-            rect,
-            text,
-            fontname=safe_name,
-            fontsize=size,
-            color=color,
-            align=align,
+            rect, text, fontname=safe_name, fontsize=size, color=color, align=align,
         )
-        if rc >= 0:  # tudo coube
+        if rc >= 0:
             return True
         size -= 0.5
     log.warning("Texto não coube no bbox %s: %r", bbox.to_tuple(), text)
@@ -156,30 +93,25 @@ def _write_text(
 
 def _draw_barcode(page: fitz.Page, bbox: BBox, digits: str) -> bool:
     """
-    Apaga a região do barcode antigo e desenha o novo barcode ITF como
-    retângulos pretos vetoriais. Mantém vetorial → nítido em qualquer zoom.
+    v0.4: usa PNG embebido (python-barcode) em vez de retângulos vetoriais,
+    porque scanners reais não liam o barcode vetorial anterior.
     """
     _erase_region(page, bbox)
     try:
-        rects = barcode_gen.render_to_rects(digits, bbox.to_tuple())
+        png_bytes = barcode_gen.render_to_png_bytes(
+            digits,
+            target_width_pt=bbox.x1 - bbox.x0,
+            target_height_pt=bbox.y1 - bbox.y0,
+        )
     except Exception as e:
-        log.error("Falha ao gerar padrão ITF: %s", e)
+        log.error("Falha ao gerar barcode ITF: %s", e)
         return False
-    for (x0, y0, x1, y1) in rects:
-        r = fitz.Rect(x0, y0, x1, y1)
-        page.draw_rect(r, color=(0, 0, 0), fill=(0, 0, 0), width=0)
+    rect = fitz.Rect(bbox.x0, bbox.y0, bbox.x1, bbox.y1)
+    page.insert_image(rect, stream=png_bytes, keep_proportion=False)
     return True
 
 
-# ─────────────── Orquestrador ───────────────
 def apply_edits(req: EditRequest) -> EditReport:
-    """
-    Entrada: template PDF + dados novos + lista de campos a editar
-    Saída:   PDF bytes editado + relatório do que rolou
-
-    Para cada FieldKey, edita TODAS as ocorrências encontradas no template
-    (boletos repetem dados em Recibo do Pagador + Ficha de Compensação).
-    """
     detections: Dict[FieldKey, List[CampoDetectado]] = detect_all(req.template_pdf_bytes)
     total = sum(len(v) for v in detections.values())
     log.info("Detectados %d campos únicos (%d ocorrências totais): %s",
@@ -187,7 +119,7 @@ def apply_edits(req: EditRequest) -> EditReport:
              {k.value: len(v) for k, v in detections.items()})
 
     doc = fitz.open(stream=req.template_pdf_bytes, filetype="pdf")
-    edited: Dict[FieldKey, BBox] = {}    # guarda o bbox da PRIMEIRA ocorrência por campo
+    edited: Dict[FieldKey, BBox] = {}
     edited_count: Dict[FieldKey, int] = {}
     skipped: Dict[FieldKey, str] = {}
 
@@ -209,14 +141,12 @@ def apply_edits(req: EditRequest) -> EditReport:
                 page = doc[campo.page_index]
                 try:
                     if key == FieldKey.CODIGO_BARRAS:
-                        # new_value são os 44 dígitos puros
                         if _draw_barcode(page, campo.bbox, new_value):
                             successes += 1
                             edited.setdefault(key, campo.bbox)
                         else:
                             failures.append(f"#{idx}: falha ao desenhar barcode")
                     else:
-                        # Texto: amostra fonte original, apaga, reinsere
                         font, size, color = _sample_font_at(page, campo.bbox)
                         _erase_region(page, campo.bbox)
                         text = new_value
@@ -243,7 +173,6 @@ def apply_edits(req: EditRequest) -> EditReport:
 
         output = doc.tobytes(garbage=4, deflate=True)
         report = EditReport(output_pdf_bytes=output, edited=edited, skipped=skipped)
-        # Anexa contagem detalhada como atributo extra (sem quebrar dataclass)
         report.edited_count = edited_count  # type: ignore[attr-defined]
         return report
     finally:
