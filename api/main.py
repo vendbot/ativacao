@@ -27,8 +27,8 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import Response, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from my_pdf_ai.core.models import BoletoData, EditRequest, FieldKey
-from my_pdf_ai.core import extractor, editor, detector
+from core.models import BoletoData, EditRequest, FieldKey
+from core import extractor, editor, detector
 
 # ─── Logging ───
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
